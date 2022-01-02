@@ -24,6 +24,7 @@ Ticker wifiReconnectTimer;
 #define MQTT_PUB_TEMP "c3698581-d0a0-4c7a-8041-b50f2e80fe53_T"
 #define MQTT_PUB_VAL "c3698581-d0a0-4c7a-8041-b50f2e80fe53_VAL"
 #define MQTT_PUB_MQTT "c3698581-d0a0-4c7a-8041-b50f2e80fe53_MQTT"
+#define MQTT_PUB_SET "c3698581-d0a0-4c7a-8041-b50f2e80fe53_SET"
 
 // Define
 AsyncMqttClient mqttClient;
@@ -122,6 +123,9 @@ void onMqttConnect(bool sessionPresent)
   Serial.print("Session present: ");
   Serial.println(sessionPresent);
   blinker.attach_ms(2000, changeState);
+  uint16_t packetIdSub = mqttClient.subscribe(MQTT_PUB_SET, 2);
+  Serial.print("Subscribing at QoS 2, packetId: ");
+  Serial.println(packetIdSub);
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason)
@@ -155,6 +159,25 @@ void onMqttPublish(uint16_t packetId)
   Serial.print("Publish acknowledged.");
   Serial.print("  packetId: ");
   Serial.println(packetId);
+}
+
+void onMqttMessage(char *topic, char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total)
+{
+  Serial.println("Publish received.");
+  Serial.print("  topic: ");
+  Serial.println(topic);
+  Serial.print("  qos: ");
+  Serial.println(properties.qos);
+  Serial.print("  dup: ");
+  Serial.println(properties.dup);
+  Serial.print("  retain: ");
+  Serial.println(properties.retain);
+  Serial.print("  len: ");
+  Serial.println(len);
+  Serial.print("  index: ");
+  Serial.println(index);
+  Serial.print("  total: ");
+  Serial.println(total);
 }
 
 void measureandsend()
@@ -213,6 +236,7 @@ void setup()
   mqttClient.onSubscribe(onMqttSubscribe);
   mqttClient.onUnsubscribe(onMqttUnsubscribe);
   mqttClient.onPublish(onMqttPublish);
+  mqttClient.onMessage(onMqttMessage);
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
   // If your broker requires authentication (username and password), set them below
   //mqttClient.setCredentials("REPlACE_WITH_YOUR_USER", "REPLACE_WITH_YOUR_PASSWORD");
